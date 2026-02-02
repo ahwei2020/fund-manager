@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>交易记录 - 基金管理助手</title>
+
+  <!-- CSS 样式 -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <style>
+    /* 交易记录页面特定样式 */
+    .filter-tabs {
+      display: flex;
+      background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-light);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .filter-tab {
+      flex: 1;
+      padding: var(--spacing-md);
+      text-align: center;
+      font-size: var(--font-size-md);
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .filter-tab.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .transaction-list {
+      padding: var(--spacing-md);
+    }
+
+    .transaction-item {
+      background-color: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      margin-bottom: var(--spacing-sm);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .transaction-item:active {
+      background-color: var(--bg-secondary);
+    }
+
+    .transaction-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .transaction-fund {
+      font-size: var(--font-size-md);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .transaction-type-badge {
+      display: inline-block;
+      padding: 2px var(--spacing-sm);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .transaction-type-badge.buy {
+      background-color: rgba(244, 67, 54, 0.1);
+      color: var(--danger-color);
+    }
+
+    .transaction-type-badge.sell {
+      background-color: rgba(76, 175, 80, 0.1);
+      color: var(--success-color);
+    }
+
+    .transaction-type-badge.convert {
+      background-color: rgba(33, 150, 243, 0.1);
+      color: var(--primary-color);
+    }
+
+    .transaction-details {
+      display: flex;
+      justify-content: space-between;
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+    }
+
+    .transaction-shares {
+      flex: 1;
+    }
+
+    .transaction-amount {
+      font-weight: var(--font-weight-medium);
+      color: var(--text-primary);
+    }
+
+    .transaction-date {
+      font-size: var(--font-size-xs);
+      color: var(--text-hint);
+      margin-top: var(--spacing-xs);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--spacing-xl) var(--spacing-md);
+      color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: var(--spacing-md);
+      opacity: 0.5;
+    }
+
+    .stats-bar {
+      display: flex;
+      padding: var(--spacing-md);
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .stat-item {
+      flex: 1;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: var(--font-size-xs);
+      color: var(--text-secondary);
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-size: var(--font-size-md);
+      font-weight: var(--font-weight-bold);
+      color: var(--primary-color);
+    }
+
+    .date-group {
+      margin-bottom: var(--spacing-md);
+    }
+
+    .date-header {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      padding: var(--spacing-sm) var(--spacing-md);
+      background-color: var(--bg-secondary);
+    }
+  </style>
+</head>
+<body>
+  <!-- 头部 -->
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <h1 class="header-title">交易记录</h1>
+        <button class="btn btn-icon" id="exportBtn" aria-label="导出">
+          📤
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 筛选标签 -->
+  <div class="filter-tabs">
+    <div class="filter-tab active" data-filter="all">全部</div>
+    <div class="filter-tab" data-filter="buy">买入</div>
+    <div class="filter-tab" data-filter="sell">卖出</div>
+    <div class="filter-tab" data-filter="convert">转换</div>
+  </div>
+
+  <!-- 统计栏 -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-item">
+      <div class="stat-label">总交易</div>
+      <div class="stat-value" id="totalCount">0</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">买入金额</div>
+      <div class="stat-value" id="buyAmount">¥0</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">卖出金额</div>
+      <div class="stat-value" id="sellAmount">¥0</div>
+    </div>
+  </div>
+
+  <!-- 交易列表 -->
+  <main style="padding-bottom: 80px;">
+    <div class="transaction-list" id="transactionList">
+      <!-- 交易列表将通过 JS 动态生成 -->
+    </div>
+
+    <!-- 空状态 -->
+    <div class="empty-state hidden" id="emptyState">
+      <div class="empty-state-icon">📝</div>
+      <div class="empty-state-text">暂无交易记录</div>
+    </div>
+  </main>
+
+  <!-- 底部导航 -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item">
+      <span class="bottom-nav-item-icon">📊</span>
+      <span>持仓</span>
+    </a>
+    <a href="transactions.html" class="bottom-nav-item active">
+      <span class="bottom-nav-item-icon">📝</span>
+      <span>交易</span>
+    </a>
+    <a href="settings.html" class="bottom-nav-item">
+      <span class="bottom-nav-item-icon">⚙️</span>
+      <span>设置</span>
+    </a>
+  </nav>
+
+  <!-- JavaScript -->
+  <script src="js/storage.js"></script>
+  <script src="js/fund-api.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    // 当前筛选
+    let currentFilter = 'all';
+    let transactions = [];
+
+    /**
+     * 初始化页面
+     */
+    function initPage() {
+      loadTransactions();
+      bindEvents();
+    }
+
+    /**
+     * 加载交易记录
+     */
+    function loadTransactions() {
+      transactions = Storage.getTransactions();
+      renderTransactions();
+      updateStats();
+    }
+
+    /**
+     * 渲染交易记录
+     */
+    function renderTransactions() {
+      const listEl = document.getElementById('transactionList');
+      const emptyEl = document.getElementById('emptyState');
+
+      // 筛选
+      let filtered = transactions;
+      if (currentFilter !== 'all') {
+        filtered = transactions.filter(t => t.type === currentFilter);
+      }
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+
+      // 按日期分组
+      const grouped = groupByDate(filtered);
+
+      let html = '';
+      for (const date in grouped) {
+        html += `
+          <div class="date-group">
+            <div class="date-header">${formatDateHeader(date)}</div>
+        `;
+
+        grouped[date].forEach(t => {
+          const typeName = Utils.getTransactionTypeName(t.type);
+          html += `
+            <div class="transaction-item" onclick="viewTransaction('${t.id}')">
+              <div class="transaction-header">
+                <div class="transaction-fund">${escapeHtml(t.fundName)}</div>
+                <span class="transaction-type-badge ${t.type}">${typeName}</span>
+              </div>
+              <div class="transaction-details">
+                <div class="transaction-shares">${t.shares.toFixed(2)} 份 @ ¥${t.price.toFixed(4)}</div>
+                <div class="transaction-amount">¥${t.amount.toFixed(2)}</div>
+              </div>
+              <div class="transaction-date">${t.date}</div>
+            </div>
+          `;
+        });
+
+        html += '</div>';
+      }
+
+      listEl.innerHTML = html;
+    }
+
+    /**
+     * 按日期分组
+     */
+    function groupByDate(items) {
+      const grouped = {};
+      items.forEach(item => {
+        if (!grouped[item.date]) {
+          grouped[item.date] = [];
+        }
+        grouped[item.date].push(item);
+      });
+      return grouped;
+    }
+
+    /**
+     * 格式化日期标题
+     */
+    function formatDateHeader(date) {
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+      if (date === today) {
+        return '今天';
+      } else if (date === yesterday) {
+        return '昨天';
+      } else {
+        return date;
+      }
+    }
+
+    /**
+     * 更新统计
+     */
+    function updateStats() {
+      document.getElementById('totalCount').textContent = transactions.length;
+
+      let buyAmount = 0;
+      let sellAmount = 0;
+
+      transactions.forEach(t => {
+        if (t.type === 'buy') {
+          buyAmount += t.amount;
+        } else if (t.type === 'sell') {
+          sellAmount += t.amount;
+        }
+      });
+
+      document.getElementById('buyAmount').textContent = formatAmount(buyAmount);
+      document.getElementById('sellAmount').textContent = formatAmount(sellAmount);
+    }
+
+    /**
+     * 格式化金额
+     */
+    function formatAmount(amount) {
+      if (amount >= 10000) {
+        return (amount / 10000).toFixed(1) + '万';
+      }
+      return amount.toFixed(0);
+    }
+
+    /**
+     * 查看交易详情
+     */
+    function viewTransaction(id) {
+      // 可以显示详情弹窗
+      const transaction = transactions.find(t => t.id === id);
+      if (transaction) {
+        const typeName = Utils.getTransactionTypeName(transaction.type);
+        const message = `
+          ${transaction.fundName} (${transaction.fundCode})
+          ${typeName} ${transaction.shares.toFixed(2)} 份
+          @ ¥${transaction.price.toFixed(4)}
+          金额: ¥${transaction.amount.toFixed(2)}
+          日期: ${transaction.date}
+        `;
+        alert(message.trim());
+      }
+    }
+
+    /**
+     * 导出交易记录
+     */
+    function exportTransactions() {
+      if (transactions.length === 0) {
+        Utils.toast('暂无交易记录');
+        return;
+      }
+
+      // 生成 CSV 格式
+      let csv = '日期,基金代码,基金名称,类型,份额,净值,金额\n';
+      transactions.forEach(t => {
+        const typeName = Utils.getTransactionTypeName(t.type);
+        csv += `${t.date},${t.fundCode},${t.fundName},${typeName},${t.shares.toFixed(2)},${t.price.toFixed(4)},${t.amount.toFixed(2)}\n`;
+      });
+
+      const filename = `基金交易记录_${new Date().toISOString().split('T')[0]}.csv`;
+      Utils.downloadFile(csv, filename, 'text/csv;charset=utf-8;');
+    }
+
+    /**
+     * HTML 转义
+     */
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    /**
+     * 绑定事件
+     */
+    function bindEvents() {
+      // 筛选标签
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          currentFilter = tab.dataset.filter;
+          renderTransactions();
+        });
+      });
+
+      // 导出按钮
+      document.getElementById('exportBtn').addEventListener('click', exportTransactions);
+    }
+
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', initPage);
+  </script>
+</body>
+</html>

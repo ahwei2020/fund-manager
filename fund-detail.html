@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>基金详情 - 基金管理助手</title>
+
+  <!-- CSS 样式 -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <style>
+    /* 基金详情页面特定样式 */
+    .fund-header {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: var(--spacing-lg) var(--spacing-md);
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    }
+
+    .fund-name {
+      font-size: var(--font-size-xl);
+      font-weight: var(--font-weight-bold);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .fund-code {
+      font-size: var(--font-size-sm);
+      opacity: 0.9;
+    }
+
+    .fund-type {
+      display: inline-block;
+      margin-top: var(--spacing-sm);
+      padding: 4px var(--spacing-sm);
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-xs);
+    }
+
+    .profit-summary {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
+      margin: var(--spacing-md) 0;
+    }
+
+    .profit-item {
+      text-align: center;
+      padding: var(--spacing-md);
+      background-color: var(--bg-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .profit-label {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .profit-value {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-bold);
+    }
+
+    .holding-info-card {
+      background-color: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--spacing-sm) 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+    }
+
+    .info-value {
+      font-weight: var(--font-weight-medium);
+    }
+
+    .action-buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--spacing-sm);
+      padding: var(--spacing-md);
+    }
+
+    .action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--spacing-md);
+      background-color: var(--bg-card);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .action-btn:active {
+      background-color: var(--bg-secondary);
+    }
+
+    .action-btn-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+
+    .action-btn-text {
+      font-size: var(--font-size-xs);
+      color: var(--text-secondary);
+    }
+
+    .transaction-list {
+      padding: var(--spacing-md);
+    }
+
+    .transaction-item {
+      padding: var(--spacing-md);
+      background-color: var(--bg-card);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .transaction-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .transaction-type {
+      font-weight: var(--font-weight-medium);
+    }
+
+    .transaction-date {
+      font-size: var(--font-size-xs);
+      color: var(--text-secondary);
+    }
+
+    .transaction-details {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+    }
+
+    .empty-transactions {
+      text-align: center;
+      padding: var(--spacing-xl) var(--spacing-md);
+      color: var(--text-secondary);
+    }
+
+    .delete-btn {
+      position: fixed;
+      bottom: 80px;
+      left: var(--spacing-md);
+      padding: var(--spacing-sm) var(--spacing-md);
+      background-color: var(--danger-color);
+      color: white;
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      box-shadow: var(--shadow-md);
+      cursor: pointer;
+    }
+
+    .chart-container {
+      height: 200px;
+      margin: var(--spacing-md);
+      background-color: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <!-- 头部 -->
+  <header class="header" style="background: transparent; box-shadow: none; position: absolute; width: 100%;">
+    <div class="container">
+      <div class="header-content">
+        <button class="btn btn-icon" onclick="history.back()" style="color: white;" aria-label="返回">
+          ←
+        </button>
+        <h1 class="header-title" style="color: white;">基金详情</h1>
+        <div style="width: 36px;"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主内容 -->
+  <main style="padding-top: 60px; padding-bottom: 100px;">
+    <!-- 基金头部信息 -->
+    <div class="fund-header" id="fundHeader">
+      <div class="fund-name" id="fundName">--</div>
+      <div class="fund-code" id="fundCode">--</div>
+      <div class="fund-type" id="fundType">--</div>
+    </div>
+
+    <!-- 收益概览 -->
+    <div class="profit-summary">
+      <div class="profit-item">
+        <div class="profit-label">累计收益</div>
+        <div class="profit-value" id="totalProfit">--</div>
+      </div>
+      <div class="profit-item">
+        <div class="profit-label">今日收益</div>
+        <div class="profit-value" id="todayProfit">--</div>
+      </div>
+    </div>
+
+    <!-- 持仓信息 -->
+    <div class="container">
+      <div class="holding-info-card">
+        <div class="card-title" style="margin-bottom: var(--spacing-md);">持仓信息</div>
+        <div class="info-row">
+          <span class="info-label">持有份额</span>
+          <span class="info-value" id="holdingShares">--</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">成本单价</span>
+          <span class="info-value" id="costPrice">--</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">成本金额</span>
+          <span class="info-value" id="costAmount">--</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">最新净值</span>
+          <span class="info-value" id="latestNav">--</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">当前市值</span>
+          <span class="info-value" id="currentValue">--</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">持有天数</span>
+          <span class="info-value" id="holdingDays">--</span>
+        </div>
+      </div>
+
+      <!-- 收益走势图 -->
+      <div class="card-title">收益走势</div>
+      <div class="chart-container">
+        <div style="text-align: center;">
+          <div style="font-size: 48px; opacity: 0.5;">📈</div>
+          <div class="text-sm mt-2">图表功能开发中</div>
+        </div>
+      </div>
+
+      <!-- 交易记录 -->
+      <div class="card-title">交易记录</div>
+      <div id="transactionList">
+        <!-- 交易列表将通过 JS 动态生成 -->
+      </div>
+    </div>
+  </main>
+
+  <!-- 删除按钮 -->
+  <div class="delete-btn" id="deleteBtn">删除持仓</div>
+
+  <!-- 底部操作按钮 -->
+  <div class="action-buttons">
+    <div class="action-btn" id="addBtn">
+      <span class="action-btn-icon">➕</span>
+      <span class="action-btn-text">加仓</span>
+    </div>
+    <div class="action-btn" id="reduceBtn">
+      <span class="action-btn-icon">➖</span>
+      <span class="action-btn-text">减仓</span>
+    </div>
+    <div class="action-btn" onclick="window.open('https://fund.eastmoney.com/' + currentFundCode + '.html', '_blank')">
+      <span class="action-btn-icon">📊</span>
+      <span class="action-btn-text">详情</span>
+    </div>
+    <div class="action-btn" id="refreshBtn">
+      <span class="action-btn-icon">🔄</span>
+      <span class="action-btn-text">刷新</span>
+    </div>
+  </div>
+
+  <!-- 交易弹窗 -->
+  <div id="transactionModal" style="display: none;">
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100;"></div>
+    <div style="position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: var(--spacing-lg); z-index: 101; max-height: 80vh; overflow-y: auto;">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-bold" id="modalTitle">交易</h2>
+        <button class="btn btn-icon" id="closeModal">✕</button>
+      </div>
+      <form id="transactionForm">
+        <div class="form-group">
+          <label class="form-label">份额</label>
+          <input type="number" class="form-input" id="transShares" placeholder="请输入份额" step="0.01" min="0.01" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">确认净值</label>
+          <input type="number" class="form-input" id="transPrice" placeholder="请输入确认净值" step="0.0001" min="0.0001" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">交易金额</label>
+          <input type="number" class="form-input" id="transAmount" placeholder="自动计算" readonly>
+        </div>
+        <div class="form-group">
+          <label class="form-label">交易日期</label>
+          <input type="date" class="form-input" id="transDate" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">确认</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="js/storage.js"></script>
+  <script src="js/fund-api.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    // 当前基金
+    let currentFund = null;
+    let currentFundCode = '';
+    let transactionType = 'buy';
+
+    // 从URL获取基金ID
+    const urlParams = Utils.parseUrlParams();
+    const holdingId = urlParams.id || sessionStorage.getItem('currentHoldingId');
+
+    /**
+     * 初始化页面
+     */
+    async function initPage() {
+      if (!holdingId) {
+        Utils.toast('参数错误');
+        history.back();
+        return;
+      }
+
+      // 加载持仓数据
+      const holdings = Storage.getHoldings();
+      currentFund = holdings.find(h => h.id === holdingId);
+
+      if (!currentFund) {
+        Utils.toast('未找到该持仓');
+        history.back();
+        return;
+      }
+
+      currentFundCode = currentFund.code;
+
+      // 渲染基金信息
+      renderFundInfo();
+
+      // 渲染交易记录
+      renderTransactions();
+
+      // 刷新净值数据
+      await refreshNetValue();
+    }
+
+    /**
+     * 渲染基金信息
+     */
+    function renderFundInfo() {
+      document.getElementById('fundName').textContent = currentFund.name;
+      document.getElementById('fundCode').textContent = currentFund.code;
+      document.getElementById('fundType').textContent = currentFund.type || '基金';
+
+      // 计算收益
+      const profit = Calculator.calculateProfit(currentFund, currentFund.lastNav || currentFund.costPrice);
+      const profitFormat = Calculator.formatProfit(profit.profit, profit.profitRate);
+
+      // 累计收益
+      document.getElementById('totalProfit').textContent = profitFormat.amountText;
+      document.getElementById('totalProfit').className = 'profit-value ' + profitFormat.className;
+
+      // 今日收益
+      const dayProfit = Calculator.calculateDayProfit(currentFund, currentFund.dayChange || 0);
+      const dayProfitFormat = Calculator.formatProfit(dayProfit, currentFund.dayChange || 0);
+      document.getElementById('todayProfit').textContent = dayProfitFormat.amountText;
+      document.getElementById('todayProfit').className = 'profit-value ' + dayProfitFormat.className;
+
+      // 持仓信息
+      document.getElementById('holdingShares').textContent = currentFund.shares.toFixed(2) + ' 份';
+      document.getElementById('costPrice').textContent = '¥' + currentFund.costPrice.toFixed(4);
+      document.getElementById('costAmount').textContent = '¥' + profit.costAmount.toFixed(2);
+      document.getElementById('latestNav').textContent = '¥' + (currentFund.lastNav || currentFund.costPrice).toFixed(4);
+      document.getElementById('currentValue').textContent = '¥' + profit.currentAmount.toFixed(2);
+
+      // 持有天数
+      const holdingDays = Calculator.calculateHoldingDays(currentFund.addDate);
+      document.getElementById('holdingDays').textContent = holdingDays + ' 天';
+    }
+
+    /**
+     * 渲染交易记录
+     */
+    function renderTransactions() {
+      const listEl = document.getElementById('transactionList');
+      const transactions = Storage.getTransactions().filter(t => t.fundCode === currentFund.code);
+
+      if (transactions.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-transactions">
+            <p>暂无交易记录</p>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = transactions.map(t => {
+        const typeName = Utils.getTransactionTypeName(t.type);
+        const typeClass = Utils.getTransactionTypeClass(t.type);
+
+        return `
+          <div class="transaction-item">
+            <div class="transaction-header">
+              <span class="transaction-type ${typeClass}">${typeName}</span>
+              <span class="transaction-date">${t.date}</span>
+            </div>
+            <div class="transaction-details">
+              ${t.shares.toFixed(2)} 份 @ ¥${t.price.toFixed(4)} · 金额 ¥${t.amount.toFixed(2)}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /**
+     * 刷新净值
+     */
+    async function refreshNetValue() {
+      try {
+        const estimate = await FundAPI.getFundEstimate(currentFund.code);
+
+        if (estimate) {
+          currentFund.lastNav = estimate.netWorth;
+          currentFund.dayChange = estimate.dayGrowth;
+          currentFund.estimateTime = estimate.time;
+
+          // 更新持仓
+          Storage.updateHolding(currentFund.id, {
+            lastNav: currentFund.lastNav,
+            dayChange: currentFund.dayChange
+          });
+
+          // 重新渲染
+          renderFundInfo();
+          Utils.toast('数据已更新');
+        }
+      } catch (error) {
+        console.error('刷新净值失败:', error);
+      }
+    }
+
+    /**
+     * 显示交易弹窗
+     */
+    function showTransactionModal(type) {
+      transactionType = type;
+      const title = type === 'buy' ? '加仓' : '减仓';
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('transShares').value = '';
+      document.getElementById('transPrice').value = currentFund.lastNav || currentFund.costPrice;
+      document.getElementById('transAmount').value = '';
+      document.getElementById('transDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('transactionModal').style.display = 'block';
+    }
+
+    /**
+     * 关闭交易弹窗
+     */
+    function closeTransactionModal() {
+      document.getElementById('transactionModal').style.display = 'none';
+    }
+
+    /**
+     * 计算交易金额
+     */
+    function calculateTransAmount() {
+      const shares = parseFloat(document.getElementById('transShares').value) || 0;
+      const price = parseFloat(document.getElementById('transPrice').value) || 0;
+      const amount = shares * price;
+      document.getElementById('transAmount').value = amount > 0 ? amount.toFixed(2) : '';
+    }
+
+    /**
+     * 提交交易
+     */
+    function submitTransaction(e) {
+      e.preventDefault();
+
+      const shares = parseFloat(document.getElementById('transShares').value);
+      const price = parseFloat(document.getElementById('transPrice').value);
+      const date = document.getElementById('transDate').value;
+
+      if (!Utils.isValidShares(shares)) {
+        Utils.toast('请输入有效的份额');
+        return;
+      }
+
+      if (!Utils.isValidPrice(price)) {
+        Utils.toast('请输入有效的净值');
+        return;
+      }
+
+      if (transactionType === 'sell' && shares > currentFund.shares) {
+        Utils.toast('卖出份额不能超过持有份额');
+        return;
+      }
+
+      // 计算交易后的持仓
+      const transaction = {
+        fundCode: currentFund.code,
+        fundName: currentFund.name,
+        type: transactionType,
+        shares: shares,
+        price: price,
+        amount: shares * price,
+        date: date
+      };
+
+      // 添加交易记录
+      Storage.addTransaction(transaction);
+
+      // 更新持仓
+      const afterTrans = Calculator.calculateAfterTransaction(currentFund, transaction);
+
+      if (afterTrans.shares === 0) {
+        // 全部卖出，删除持仓
+        Storage.deleteHolding(currentFund.id);
+        Utils.toast('交易成功，持仓已清空');
+        setTimeout(() => {
+          location.href = 'index.html';
+        }, 1000);
+      } else {
+        Storage.updateHolding(currentFund.id, afterTrans);
+        currentFund.shares = afterTrans.shares;
+        currentFund.costPrice = afterTrans.costPrice;
+
+        Utils.toast('交易成功');
+        closeTransactionModal();
+        renderFundInfo();
+        renderTransactions();
+      }
+    }
+
+    /**
+     * 删除持仓
+     */
+    async function deleteHolding() {
+      const confirmed = await Utils.confirm(`确定要删除 "${currentFund.name}" 的持仓吗？此操作不可恢复。`);
+      if (confirmed) {
+        Storage.deleteHolding(currentFund.id);
+        Utils.toast('已删除');
+        setTimeout(() => {
+          location.href = 'index.html';
+        }, 500);
+      }
+    }
+
+    // 事件绑定
+    document.getElementById('addBtn').addEventListener('click', () => showTransactionModal('buy'));
+    document.getElementById('reduceBtn').addEventListener('click', () => showTransactionModal('sell'));
+    document.getElementById('refreshBtn').addEventListener('click', refreshNetValue);
+    document.getElementById('closeModal').addEventListener('click', closeTransactionModal);
+    document.getElementById('deleteBtn').addEventListener('click', deleteHolding);
+
+    document.getElementById('transShares').addEventListener('input', calculateTransAmount);
+    document.getElementById('transPrice').addEventListener('input', calculateTransAmount);
+    document.getElementById('transactionForm').addEventListener('submit', submitTransaction);
+
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', initPage);
+  </script>
+</body>
+</html>

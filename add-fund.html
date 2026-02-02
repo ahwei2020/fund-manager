@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>添加基金 - 基金管理助手</title>
+
+  <!-- CSS 样式 -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <style>
+    /* 添加基金页面特定样式 */
+    .search-box {
+      position: sticky;
+      top: 0;
+      background-color: var(--bg-card);
+      padding: var(--spacing-md);
+      z-index: 10;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input-wrapper input {
+      padding-right: 40px;
+    }
+
+    .search-clear {
+      position: absolute;
+      right: var(--spacing-sm);
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--bg-tertiary);
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .search-results {
+      padding: var(--spacing-md);
+    }
+
+    .search-result-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-md);
+      background-color: var(--bg-card);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--spacing-sm);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .search-result-item:hover {
+      background-color: var(--bg-secondary);
+    }
+
+    .search-result-item.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .search-result-info h3 {
+      font-size: var(--font-size-md);
+      font-weight: var(--font-weight-medium);
+      margin-bottom: 4px;
+    }
+
+    .search-result-meta {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+    }
+
+    .search-result-btn {
+      padding: var(--spacing-xs) var(--spacing-md);
+      font-size: var(--font-size-sm);
+    }
+
+    .holding-form {
+      padding: var(--spacing-md);
+    }
+
+    .selected-fund {
+      background-color: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .selected-fund-name {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-bold);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .selected-fund-code {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+    }
+
+    .form-hint {
+      font-size: var(--font-size-xs);
+      color: var(--text-secondary);
+      margin-top: var(--spacing-xs);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-lg);
+    }
+
+    .form-actions .btn {
+      flex: 1;
+    }
+
+    .search-empty {
+      text-align: center;
+      padding: var(--spacing-xl) var(--spacing-md);
+      color: var(--text-secondary);
+    }
+
+    .search-loading {
+      text-align: center;
+      padding: var(--spacing-lg);
+    }
+
+    .recent-searches {
+      padding: var(--spacing-md);
+    }
+
+    .recent-searches-title {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .recent-search-tag {
+      display: inline-block;
+      padding: var(--spacing-xs) var(--spacing-sm);
+      background-color: var(--bg-tertiary);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-sm);
+      margin-right: var(--spacing-xs);
+      margin-bottom: var(--spacing-xs);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <!-- 头部 -->
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <button class="btn btn-icon" onclick="history.back()" aria-label="返回">
+          ←
+        </button>
+        <h1 class="header-title">添加基金</h1>
+        <div style="width: 36px;"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 搜索框 -->
+  <div class="search-box">
+    <div class="search-input-wrapper">
+      <input
+        type="text"
+        class="form-input"
+        id="searchInput"
+        placeholder="请输入基金代码或名称"
+        autocomplete="off"
+      >
+      <span class="search-clear hidden" id="searchClear">✕</span>
+    </div>
+  </div>
+
+  <!-- 主内容 -->
+  <main style="padding-bottom: 80px;">
+    <!-- 搜索结果 -->
+    <div id="searchResults" class="hidden">
+      <div class="search-loading hidden" id="searchLoading">
+        <div class="loading"></div>
+        <p class="mt-2">搜索中...</p>
+      </div>
+      <div id="resultsList"></div>
+      <div class="search-empty hidden" id="searchEmpty">
+        <p>未找到相关基金</p>
+        <p class="text-sm mt-2">请尝试输入6位基金代码</p>
+      </div>
+    </div>
+
+    <!-- 持仓表单 -->
+    <div id="holdingForm" class="holding-form hidden">
+      <div class="selected-fund">
+        <div class="selected-fund-name" id="selectedFundName"></div>
+        <div class="selected-fund-code" id="selectedFundCode"></div>
+      </div>
+
+      <form id="addHoldingForm">
+        <div class="form-group">
+          <label class="form-label">持有份额</label>
+          <input
+            type="number"
+            class="form-input"
+            id="sharesInput"
+            placeholder="请输入持有份额"
+            step="0.01"
+            min="0.01"
+            required
+          >
+          <div class="form-hint">请填写实际持有的基金份额</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">成本单价 (元)</label>
+          <input
+            type="number"
+            class="form-input"
+            id="costPriceInput"
+            placeholder="请输入买入时的单价"
+            step="0.0001"
+            min="0.0001"
+            required
+          >
+          <div class="form-hint">输入买入时的基金净值</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">成本金额 (元)</label>
+          <input
+            type="number"
+            class="form-input"
+            id="costAmountInput"
+            placeholder="自动计算"
+            readonly
+          >
+          <div class="form-hint">份额 × 成本单价 = 成本金额</div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="cancelBtn">
+            取消
+          </button>
+          <button type="submit" class="btn btn-primary" id="confirmBtn">
+            确认添加
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 默认提示 -->
+    <div id="defaultHint" class="recent-searches">
+      <div class="recent-searches-title">热门基金</div>
+      <span class="recent-search-tag" onclick="quickSearch('110022')">易方达消费行业</span>
+      <span class="recent-search-tag" onclick="quickSearch('110003')">易方达上证50</span>
+      <span class="recent-search-tag" onclick="quickSearch('163406')">兴全合润</span>
+      <span class="recent-search-tag" onclick="quickSearch('000001')">华夏成长</span>
+    </div>
+  </main>
+
+  <!-- JavaScript -->
+  <script src="js/storage.js"></script>
+  <script src="js/fund-api.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    // 当前选中的基金
+    let selectedFund = null;
+    let searchTimer = null;
+
+    // DOM 元素
+    const searchInput = document.getElementById('searchInput');
+    const searchClear = document.getElementById('searchClear');
+    const searchResults = document.getElementById('searchResults');
+    const resultsList = document.getElementById('resultsList');
+    const searchLoading = document.getElementById('searchLoading');
+    const searchEmpty = document.getElementById('searchEmpty');
+    const holdingForm = document.getElementById('holdingForm');
+    const defaultHint = document.getElementById('defaultHint');
+    const sharesInput = document.getElementById('sharesInput');
+    const costPriceInput = document.getElementById('costPriceInput');
+    const costAmountInput = document.getElementById('costAmountInput');
+
+    /**
+     * 搜索基金
+     */
+    async function searchFunds(keyword) {
+      if (!keyword || keyword.trim().length === 0) {
+        searchResults.classList.add('hidden');
+        defaultHint.classList.remove('hidden');
+        return;
+      }
+
+      searchResults.classList.remove('hidden');
+      defaultHint.classList.add('hidden');
+      searchLoading.classList.remove('hidden');
+      resultsList.innerHTML = '';
+      searchEmpty.classList.add('hidden');
+
+      try {
+        const results = await FundAPI.searchFund(keyword);
+
+        searchLoading.classList.add('hidden');
+
+        if (results.length === 0) {
+          searchEmpty.classList.remove('hidden');
+          return;
+        }
+
+        // 获取已持有的基金代码
+        const existingCodes = Storage.getHoldings().map(h => h.code);
+
+        resultsList.innerHTML = results.map(fund => {
+          const isAdded = existingCodes.includes(fund.code);
+          return `
+            <div class="search-result-item ${isAdded ? 'disabled' : ''}" data-code="${fund.code}">
+              <div class="search-result-info">
+                <h3>${escapeHtml(fund.name)}</h3>
+                <div class="search-result-meta">
+                  <span class="tag">${fund.code}</span>
+                  ${fund.type ? `<span class="tag tag-primary">${fund.type}</span>` : ''}
+                </div>
+              </div>
+              ${isAdded
+                ? '<span class="text-secondary text-sm">已添加</span>'
+                : '<button class="btn btn-primary btn-sm search-result-btn">选择</button>'
+              }
+            </div>
+          `;
+        }).join('');
+
+        // 绑定点击事件
+        resultsList.querySelectorAll('.search-result-item:not(.disabled)').forEach(item => {
+          item.addEventListener('click', () => {
+            const code = item.dataset.code;
+            const fund = results.find(f => f.code === code);
+            selectFund(fund);
+          });
+        });
+
+      } catch (error) {
+        console.error('搜索失败:', error);
+        searchLoading.classList.add('hidden');
+        Utils.toast('搜索失败，请稍后重试');
+      }
+    }
+
+    /**
+     * 选中基金
+     */
+    function selectFund(fund) {
+      selectedFund = fund;
+
+      // 更新UI
+      document.getElementById('selectedFundName').textContent = fund.name;
+      document.getElementById('selectedFundCode').textContent = `${fund.code} ${fund.type || ''}`;
+
+      searchResults.classList.add('hidden');
+      holdingForm.classList.remove('hidden');
+
+      // 清空表单
+      sharesInput.value = '';
+      costPriceInput.value = '';
+      costAmountInput.value = '';
+
+      // 聚焦到份额输入
+      sharesInput.focus();
+    }
+
+    /**
+     * 计算成本金额
+     */
+    function calculateAmount() {
+      const shares = parseFloat(sharesInput.value) || 0;
+      const price = parseFloat(costPriceInput.value) || 0;
+      const amount = shares * price;
+
+      if (amount > 0) {
+        costAmountInput.value = amount.toFixed(2);
+      } else {
+        costAmountInput.value = '';
+      }
+    }
+
+    /**
+     * 添加持仓
+     */
+    async function addHolding(e) {
+      e.preventDefault();
+
+      const shares = parseFloat(sharesInput.value);
+      const costPrice = parseFloat(costPriceInput.value);
+
+      if (!selectedFund) {
+        Utils.toast('请先选择基金');
+        return;
+      }
+
+      if (!Utils.isValidShares(shares)) {
+        Utils.toast('请输入有效的持有份额');
+        return;
+      }
+
+      if (!Utils.isValidPrice(costPrice)) {
+        Utils.toast('请输入有效的成本单价');
+        return;
+      }
+
+      try {
+        const holding = {
+          code: selectedFund.code,
+          name: selectedFund.name,
+          type: selectedFund.type || '',
+          shares: shares,
+          costPrice: costPrice,
+          costAmount: shares * costPrice
+        };
+
+        Storage.addHolding(holding);
+
+        Utils.toast('添加成功');
+
+        // 返回首页
+        setTimeout(() => {
+          location.href = 'index.html';
+        }, 500);
+
+      } catch (error) {
+        console.error('添加持仓失败:', error);
+        Utils.toast(error.message || '添加失败，请稍后重试');
+      }
+    }
+
+    /**
+     * 快速搜索
+     */
+    function quickSearch(code) {
+      searchInput.value = code;
+      searchFunds(code);
+    }
+
+    /**
+     * HTML 转义
+     */
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 事件绑定
+    searchInput.addEventListener('input', Utils.debounce((e) => {
+      const value = e.target.value;
+
+      if (value) {
+        searchClear.classList.remove('hidden');
+      } else {
+        searchClear.classList.add('hidden');
+      }
+
+      // 防抖搜索
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        searchFunds(value);
+      }, 300);
+    }, 300));
+
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      searchClear.classList.add('hidden');
+      searchResults.classList.add('hidden');
+      defaultHint.classList.remove('hidden');
+      searchInput.focus();
+    });
+
+    sharesInput.addEventListener('input', calculateAmount);
+    costPriceInput.addEventListener('input', calculateAmount);
+
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+      holdingForm.classList.add('hidden');
+      searchResults.classList.remove('hidden');
+      searchInput.focus();
+    });
+
+    document.getElementById('addHoldingForm').addEventListener('submit', addHolding);
+
+    // 页面加载完成后聚焦搜索框
+    searchInput.focus();
+  </script>
+</body>
+</html>

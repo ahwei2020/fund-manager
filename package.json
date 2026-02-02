@@ -1,0 +1,18 @@
+{
+  "name": "fund-manager",
+  "version": "1.0.0",
+  "description": "基金管理助手 - 个人基金持仓管理工具",
+  "scripts": {
+    "dev": "python -m http.server 8000",
+    "deploy": "vercel"
+  },
+  "keywords": [
+    "fund",
+    "investment",
+    "finance",
+    "基金",
+    "理财"
+  ],
+  "author": "",
+  "license": "MIT"
+}

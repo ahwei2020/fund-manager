@@ -1,0 +1,117 @@
+/* 响应式样式 */
+
+/* 平板设备 */
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+    padding: var(--spacing-lg);
+  }
+
+  .card {
+    padding: var(--spacing-lg);
+  }
+
+  .form-row {
+    gap: var(--spacing-lg);
+  }
+
+  /* 在大屏幕上隐藏底部导航 */
+  .bottom-nav {
+    max-width: 600px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+}
+
+/* 桌面设备 */
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+
+  /* 两列布局 */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+}
+
+/* 小屏幕优化 */
+@media (max-width: 374px) {
+  html {
+    font-size: 14px;
+  }
+
+  .container {
+    padding: var(--spacing-sm);
+  }
+
+  .card {
+    padding: var(--spacing-sm);
+  }
+
+  .btn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+}
+
+/* 横屏模式 */
+@media (orientation: landscape) and (max-height: 600px) {
+  .bottom-nav {
+    padding: var(--spacing-xs);
+  }
+
+  .bottom-nav-item {
+    padding: var(--spacing-xs);
+  }
+
+  .bottom-nav-item-icon {
+    font-size: 20px;
+  }
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+  :root {
+    --border-color: #000000;
+    --text-primary: #000000;
+    --text-secondary: #333333;
+  }
+
+  [data-theme="dark"] {
+    --border-color: #ffffff;
+    --text-primary: #ffffff;
+    --text-secondary: #dddddd;
+  }
+}
+
+/* 减少动画 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 打印样式 */
+@media print {
+  .bottom-nav,
+  .btn,
+  .header {
+    display: none !important;
+  }
+
+  .container {
+    max-width: 100%;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+}

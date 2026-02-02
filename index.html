@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="基金管理助手 - 个人基金持仓管理工具">
+  <title>基金管理助手</title>
+
+  <!-- CSS 样式 -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <style>
+    /* 首页特定样式 */
+    .summary-card {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: var(--spacing-lg);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .summary-total {
+      font-size: var(--font-size-sm);
+      opacity: 0.9;
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .summary-amount {
+      font-size: 32px;
+      font-weight: var(--font-weight-bold);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .summary-profit {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      font-size: var(--font-size-md);
+    }
+
+    .summary-profit.positive {
+      color: #ffcccc;
+    }
+
+    .summary-profit.negative {
+      color: #ccffcc;
+    }
+
+    .holding-item {
+      background-color: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      margin-bottom: var(--spacing-sm);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .holding-item:active {
+      transform: scale(0.98);
+    }
+
+    .holding-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .holding-name {
+      font-size: var(--font-size-md);
+      font-weight: var(--font-weight-bold);
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .holding-code {
+      font-size: var(--font-size-xs);
+      color: var(--text-secondary);
+    }
+
+    .holding-profit {
+      text-align: right;
+    }
+
+    .holding-profit-amount {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-bold);
+    }
+
+    .holding-profit-rate {
+      font-size: var(--font-size-sm);
+    }
+
+    .holding-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+    }
+
+    .holding-day-change {
+      font-size: var(--font-size-xs);
+    }
+
+    .refresh-btn {
+      position: absolute;
+      top: var(--spacing-md);
+      right: var(--spacing-md);
+      padding: var(--spacing-xs);
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .refresh-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .refresh-btn.rotating {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .section-title-text {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-bold);
+      color: var(--text-primary);
+    }
+
+    .fab {
+      position: fixed;
+      bottom: 80px;
+      right: var(--spacing-md);
+      width: 56px;
+      height: 56px;
+      background-color: var(--primary-color);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: var(--shadow-lg);
+      cursor: pointer;
+      z-index: 50;
+      transition: transform 0.2s ease;
+    }
+
+    .fab:hover {
+      transform: scale(1.1);
+    }
+
+    .fab:active {
+      transform: scale(0.95);
+    }
+
+    .loading-skeleton {
+      background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-tertiary) 50%, var(--bg-secondary) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+    }
+
+    @keyframes skeleton-loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+  </style>
+</head>
+<body>
+  <!-- 头部 -->
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <h1 class="header-title">我的基金</h1>
+        <button class="btn btn-icon" id="settingsBtn" aria-label="设置">
+          ⚙️
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主内容 -->
+  <main class="container" style="padding-bottom: 100px;">
+    <!-- 持仓总览卡片 -->
+    <div class="summary-card" id="summaryCard">
+      <div class="summary-total">持仓总额</div>
+      <div class="summary-amount" id="totalAmount">¥0.00</div>
+      <div class="summary-profit" id="totalProfit">
+        <span id="profitIcon">📊</span>
+        <span id="profitText">加载中...</span>
+      </div>
+      <div class="refresh-btn" id="refreshBtn" title="刷新数据">
+        🔄
+      </div>
+    </div>
+
+    <!-- 持仓基金列表 -->
+    <div class="section-title">
+      <span class="section-title-text">持仓基金</span>
+      <span class="text-secondary text-sm" id="holdingCount">0 只</span>
+    </div>
+
+    <div id="holdingsList">
+      <!-- 持仓列表将通过 JS 动态生成 -->
+    </div>
+
+    <!-- 空状态 -->
+    <div class="empty-state hidden" id="emptyState">
+      <div class="empty-state-icon">📈</div>
+      <div class="empty-state-text">还没有添加任何基金</div>
+      <button class="btn btn-primary" onclick="location.href='add-fund.html'">
+        添加第一只基金
+      </button>
+    </div>
+  </main>
+
+  <!-- 悬浮添加按钮 -->
+  <div class="fab" id="fabAdd" onclick="location.href='add-fund.html'">
+    +
+  </div>
+
+  <!-- 底部导航 -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item active">
+      <span class="bottom-nav-item-icon">📊</span>
+      <span>持仓</span>
+    </a>
+    <a href="transactions.html" class="bottom-nav-item">
+      <span class="bottom-nav-item-icon">📝</span>
+      <span>交易</span>
+    </a>
+    <a href="settings.html" class="bottom-nav-item">
+      <span class="bottom-nav-item-icon">⚙️</span>
+      <span>设置</span>
+    </a>
+  </nav>
+
+  <!-- JavaScript -->
+  <script src="js/storage.js"></script>
+  <script src="js/fund-api.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
