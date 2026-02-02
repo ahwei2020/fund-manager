@@ -62,10 +62,11 @@ function renderHoldings() {
   });
 
   listEl.innerHTML = sortedHoldings.map(holding => {
-    const profit = Calculator.calculateProfit(holding, holding.lastNav || holding.costPrice);
+    const currentNav = holding.lastNav || holding.costPrice;
+    const profit = Calculator.calculateProfit(holding, currentNav);
     const profitFormat = Calculator.formatProfit(profit.profit, profit.profitRate);
-    const currentValue = holding.shares * (holding.lastNav || holding.costPrice);
-    const dayChangeText = holding.dayChange !== undefined
+    const currentValue = holding.shares * currentNav;
+    const dayChangeText = holding.dayChange !== undefined && holding.dayChange !== null
       ? `今日 ${Calculator.formatRate(holding.dayChange)}`
       : '';
 
@@ -147,10 +148,15 @@ async function refreshNetValues() {
   if (AppState.isLoading) return;
 
   const now = Date.now();
-  if (now - AppState.lastRefreshTime < AppState.refreshInterval) {
-    // 未到刷新时间，使用缓存数据
-    const summary = Calculator.calculateSummary(AppState.holdings);
-    updateSummaryCard(summary);
+
+  // 首次加载或超过刷新间隔时才从API获取数据
+  const shouldFetch = AppState.lastRefreshTime === 0 || (now - AppState.lastRefreshTime >= AppState.refreshInterval);
+
+  // 先使用现有数据计算并显示（确保有数据展示）
+  const summary = Calculator.calculateSummary(AppState.holdings);
+  updateSummaryCard(summary);
+
+  if (!shouldFetch) {
     return;
   }
 
@@ -176,7 +182,7 @@ async function refreshNetValues() {
         const holding = AppState.holdings.find(h => h.code === estimate.code);
 
         if (holding) {
-          holding.lastNav = estimate.netWorth || holding.lastNav;
+          holding.lastNav = estimate.netWorth || holding.lastNav || holding.costPrice;
           holding.dayChange = estimate.dayGrowth || 0;
           holding.estimateTime = estimate.time;
           updated = true;
@@ -188,16 +194,16 @@ async function refreshNetValues() {
       // 保存更新后的持仓数据
       Storage.saveHoldings(AppState.holdings);
 
-      // 重新渲染列表
-      renderHoldings();
-
-      // 更新总览
-      const summary = Calculator.calculateSummary(AppState.holdings);
-      updateSummaryCard(summary);
-
       // 更新刷新时间
       AppState.lastRefreshTime = now;
+    }
 
+    // 重新渲染列表和总览
+    renderHoldings();
+    const newSummary = Calculator.calculateSummary(AppState.holdings);
+    updateSummaryCard(newSummary);
+
+    if (updated) {
       Utils.toast('数据已更新');
     }
   } catch (error) {

@@ -418,13 +418,27 @@
       }
 
       try {
+        Utils.toast('正在获取基金数据...');
+
+        // 获取基金最新估值
+        let estimateData = null;
+        try {
+          estimateData = await FundAPI.getFundEstimate(selectedFund.code);
+        } catch (err) {
+          console.warn('获取估值失败，将使用成本价:', err);
+        }
+
         const holding = {
           code: selectedFund.code,
           name: selectedFund.name,
           type: selectedFund.type || '',
           shares: shares,
           costPrice: costPrice,
-          costAmount: shares * costPrice
+          costAmount: shares * costPrice,
+          // 添加最新净值数据
+          lastNav: estimateData ? estimateData.netWorth : costPrice,
+          dayChange: estimateData ? estimateData.dayGrowth : 0,
+          estimateTime: estimateData ? estimateData.time : ''
         };
 
         Storage.addHolding(holding);
